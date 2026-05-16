@@ -139,8 +139,6 @@ export abstract class PlatformIO {
 		// Check for external references, which can't be resolved by this method.
 		if (json.buffers && json.buffers.some((bufferDef) => isExternalBuffer(jsonDoc, bufferDef))) {
 			throw new Error('Cannot resolve external buffers with binaryToJSON().');
-		} else if (json.images && json.images.some((imageDef) => isExternalImage(jsonDoc, imageDef))) {
-			throw new Error('Cannot resolve external images with binaryToJSON().');
 		}
 
 		return jsonDoc;

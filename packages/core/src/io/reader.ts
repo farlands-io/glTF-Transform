@@ -565,14 +565,6 @@ export class GLTFReader {
 				}
 			}
 		}
-
-		if (json.extensionsUsed) {
-			for (const extensionName of json.extensionsUsed) {
-				if (!options.extensions.find((extension) => extension.EXTENSION_NAME === extensionName)) {
-					options.logger.warn(`Missing optional extension, "${extensionName}".`);
-				}
-			}
-		}
 	}
 }
 
