@@ -557,14 +557,6 @@ export class GLTFReader {
 		if (json.asset.version !== '2.0') {
 			throw new Error(`Unsupported glTF version, "${json.asset.version}".`);
 		}
-
-		if (json.extensionsRequired) {
-			for (const extensionName of json.extensionsRequired) {
-				if (!options.extensions.find((extension) => extension.EXTENSION_NAME === extensionName)) {
-					throw new Error(`Missing required extension, "${extensionName}".`);
-				}
-			}
-		}
 	}
 }
 
