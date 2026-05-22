@@ -12,7 +12,7 @@ import type { Extension } from '../extension.js';
 import type { JSONDocument } from '../json-document.js';
 import { Accessor, AnimationSampler, Camera } from '../properties/index.js';
 import type { GLTF } from '../types/gltf.js';
-import { BufferUtils, FileUtils, type ILogger, ImageUtils, Logger, MathUtils } from '../utils/index.js';
+import { BufferUtils, type ILogger, Logger, MathUtils } from '../utils/index.js';
 import { ReaderContext } from './reader-context.js';
 
 export interface ReaderOptions {
@@ -153,137 +153,16 @@ export class GLTFReader {
 
 		/** Textures. */
 
-		// glTF Transform's "Texture" properties correspond 1:1 with glTF "Image" properties, and
-		// with image files. The glTF file may contain more one texture per image, where images
-		// are reused with different sampler properties.
-		const imageDefs = json.images || [];
-		const textureDefs = json.textures || [];
-		document
-			.getRoot()
-			.listExtensionsUsed()
-			.filter((extension) => extension.prereadTypes.includes(PropertyType.TEXTURE))
-			.forEach((extension) => extension.preread(context, PropertyType.TEXTURE));
-		context.textures = imageDefs.map((imageDef) => {
-			const texture = document.createTexture(imageDef.name);
-
-			// glTF Image corresponds 1:1 with glTF Transform Texture. See `writer.ts`.
-			if (imageDef.extras) texture.setExtras(imageDef.extras);
-
-			if (imageDef.bufferView !== undefined) {
-				const bufferViewDef = json.bufferViews![imageDef.bufferView];
-				const bufferDef = jsonDoc.json.buffers![bufferViewDef.buffer];
-				const bufferData = bufferDef.uri ? jsonDoc.resources[bufferDef.uri] : jsonDoc.resources[GLB_BUFFER];
-				const byteOffset = bufferViewDef.byteOffset || 0;
-				const byteLength = bufferViewDef.byteLength;
-				const imageData = bufferData.slice(byteOffset, byteOffset + byteLength);
-				texture.setImage(imageData);
-			} else if (imageDef.uri !== undefined) {
-				texture.setImage(jsonDoc.resources[imageDef.uri]);
-				if (imageDef.uri.indexOf('__') !== 0) {
-					texture.setURI(imageDef.uri);
-				}
-			}
-
-			if (imageDef.mimeType !== undefined) {
-				texture.setMimeType(imageDef.mimeType);
-			} else if (imageDef.uri) {
-				const extension = FileUtils.extension(imageDef.uri);
-				texture.setMimeType(ImageUtils.extensionToMimeType(extension));
-			}
-
-			return texture;
-		});
+		// Textures are stubbed out — geometry-only loading does not need image data.
+		context.textures = (json.images || []).map((imageDef) => document.createTexture(imageDef.name));
 
 		/** Materials. */
 
-		document
-			.getRoot()
-			.listExtensionsUsed()
-			.filter((extension) => extension.prereadTypes.includes(PropertyType.MATERIAL))
-			.forEach((extension) => extension.preread(context, PropertyType.MATERIAL));
-
-		const materialDefs = json.materials || [];
-		context.materials = materialDefs.map((materialDef) => {
+		// Materials are stubbed out — geometry-only loading does not need PBR or texture data.
+		context.materials = (json.materials || []).map((materialDef) => {
 			const material = document.createMaterial(materialDef.name);
 
 			if (materialDef.extras) material.setExtras(materialDef.extras);
-
-			// Program state & blending.
-
-			if (materialDef.alphaMode !== undefined) {
-				material.setAlphaMode(materialDef.alphaMode);
-			}
-
-			if (materialDef.alphaCutoff !== undefined) {
-				material.setAlphaCutoff(materialDef.alphaCutoff);
-			}
-
-			if (materialDef.doubleSided !== undefined) {
-				material.setDoubleSided(materialDef.doubleSided);
-			}
-
-			// Factors.
-
-			const pbrDef = materialDef.pbrMetallicRoughness || {};
-
-			if (pbrDef.baseColorFactor !== undefined) {
-				material.setBaseColorFactor(pbrDef.baseColorFactor as vec4);
-			}
-
-			if (materialDef.emissiveFactor !== undefined) {
-				material.setEmissiveFactor(materialDef.emissiveFactor as vec3);
-			}
-
-			if (pbrDef.metallicFactor !== undefined) {
-				material.setMetallicFactor(pbrDef.metallicFactor);
-			}
-
-			if (pbrDef.roughnessFactor !== undefined) {
-				material.setRoughnessFactor(pbrDef.roughnessFactor);
-			}
-
-			// Textures.
-
-			if (pbrDef.baseColorTexture !== undefined) {
-				const textureInfoDef = pbrDef.baseColorTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source!];
-				material.setBaseColorTexture(texture);
-				context.setTextureInfo(material.getBaseColorTextureInfo()!, textureInfoDef);
-			}
-
-			if (materialDef.emissiveTexture !== undefined) {
-				const textureInfoDef = materialDef.emissiveTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source!];
-				material.setEmissiveTexture(texture);
-				context.setTextureInfo(material.getEmissiveTextureInfo()!, textureInfoDef);
-			}
-
-			if (materialDef.normalTexture !== undefined) {
-				const textureInfoDef = materialDef.normalTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source!];
-				material.setNormalTexture(texture);
-				context.setTextureInfo(material.getNormalTextureInfo()!, textureInfoDef);
-				if (materialDef.normalTexture.scale !== undefined) {
-					material.setNormalScale(materialDef.normalTexture.scale);
-				}
-			}
-
-			if (materialDef.occlusionTexture !== undefined) {
-				const textureInfoDef = materialDef.occlusionTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source!];
-				material.setOcclusionTexture(texture);
-				context.setTextureInfo(material.getOcclusionTextureInfo()!, textureInfoDef);
-				if (materialDef.occlusionTexture.strength !== undefined) {
-					material.setOcclusionStrength(materialDef.occlusionTexture.strength);
-				}
-			}
-
-			if (pbrDef.metallicRoughnessTexture !== undefined) {
-				const textureInfoDef = pbrDef.metallicRoughnessTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source!];
-				material.setMetallicRoughnessTexture(texture);
-				context.setTextureInfo(material.getMetallicRoughnessTextureInfo()!, textureInfoDef);
-			}
 
 			return material;
 		});

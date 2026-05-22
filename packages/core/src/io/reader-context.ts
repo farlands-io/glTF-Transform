@@ -38,7 +38,9 @@ export class ReaderContext {
 
 	constructor(public readonly jsonDoc: JSONDocument) {}
 
-	public setTextureInfo(textureInfo: TextureInfo, textureInfoDef: GLTF.ITextureInfo): void {
+	public setTextureInfo(textureInfo: TextureInfo | null, textureInfoDef: GLTF.ITextureInfo): void {
+		if (!textureInfo) return;
+
 		this.textureInfos.set(textureInfo, textureInfoDef);
 
 		if (textureInfoDef.texCoord !== undefined) {

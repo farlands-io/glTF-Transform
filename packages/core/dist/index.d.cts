@@ -3130,7 +3130,7 @@ declare class ReaderContext {
   animations: Animation[];
   scenes: Scene[];
   constructor(jsonDoc: JSONDocument);
-  setTextureInfo(textureInfo: TextureInfo, textureInfoDef: GLTF.ITextureInfo): void;
+  setTextureInfo(textureInfo: TextureInfo | null, textureInfoDef: GLTF.ITextureInfo): void;
 }
 //#endregion
 //#region src/io/web-io.d.ts

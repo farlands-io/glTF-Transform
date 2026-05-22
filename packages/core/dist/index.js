@@ -3954,6 +3954,7 @@ var ReaderContext = class {
 		this.jsonDoc = jsonDoc;
 	}
 	setTextureInfo(textureInfo, textureInfoDef) {
+		if (!textureInfo) return;
 		this.textureInfos.set(textureInfo, textureInfoDef);
 		if (textureInfoDef.texCoord !== void 0) textureInfo.setTexCoord(textureInfoDef.texCoord);
 		if (textureInfoDef.extras !== void 0) textureInfo.setExtras(textureInfoDef.extras);
@@ -4039,76 +4040,11 @@ var GLTFReader = class {
 			return accessor;
 		});
 		/** Textures. */
-		const imageDefs = json.images || [];
-		const textureDefs = json.textures || [];
-		document.getRoot().listExtensionsUsed().filter((extension) => extension.prereadTypes.includes(PropertyType.TEXTURE)).forEach((extension) => extension.preread(context, PropertyType.TEXTURE));
-		context.textures = imageDefs.map((imageDef) => {
-			const texture = document.createTexture(imageDef.name);
-			if (imageDef.extras) texture.setExtras(imageDef.extras);
-			if (imageDef.bufferView !== void 0) {
-				const bufferViewDef = json.bufferViews[imageDef.bufferView];
-				const bufferDef = jsonDoc.json.buffers[bufferViewDef.buffer];
-				const bufferData = bufferDef.uri ? jsonDoc.resources[bufferDef.uri] : jsonDoc.resources[GLB_BUFFER];
-				const byteOffset = bufferViewDef.byteOffset || 0;
-				const byteLength = bufferViewDef.byteLength;
-				const imageData = bufferData.slice(byteOffset, byteOffset + byteLength);
-				texture.setImage(imageData);
-			} else if (imageDef.uri !== void 0) {
-				texture.setImage(jsonDoc.resources[imageDef.uri]);
-				if (imageDef.uri.indexOf("__") !== 0) texture.setURI(imageDef.uri);
-			}
-			if (imageDef.mimeType !== void 0) texture.setMimeType(imageDef.mimeType);
-			else if (imageDef.uri) {
-				const extension = FileUtils.extension(imageDef.uri);
-				texture.setMimeType(ImageUtils.extensionToMimeType(extension));
-			}
-			return texture;
-		});
+		context.textures = (json.images || []).map((imageDef) => document.createTexture(imageDef.name));
 		/** Materials. */
-		document.getRoot().listExtensionsUsed().filter((extension) => extension.prereadTypes.includes(PropertyType.MATERIAL)).forEach((extension) => extension.preread(context, PropertyType.MATERIAL));
 		context.materials = (json.materials || []).map((materialDef) => {
 			const material = document.createMaterial(materialDef.name);
 			if (materialDef.extras) material.setExtras(materialDef.extras);
-			if (materialDef.alphaMode !== void 0) material.setAlphaMode(materialDef.alphaMode);
-			if (materialDef.alphaCutoff !== void 0) material.setAlphaCutoff(materialDef.alphaCutoff);
-			if (materialDef.doubleSided !== void 0) material.setDoubleSided(materialDef.doubleSided);
-			const pbrDef = materialDef.pbrMetallicRoughness || {};
-			if (pbrDef.baseColorFactor !== void 0) material.setBaseColorFactor(pbrDef.baseColorFactor);
-			if (materialDef.emissiveFactor !== void 0) material.setEmissiveFactor(materialDef.emissiveFactor);
-			if (pbrDef.metallicFactor !== void 0) material.setMetallicFactor(pbrDef.metallicFactor);
-			if (pbrDef.roughnessFactor !== void 0) material.setRoughnessFactor(pbrDef.roughnessFactor);
-			if (pbrDef.baseColorTexture !== void 0) {
-				const textureInfoDef = pbrDef.baseColorTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source];
-				material.setBaseColorTexture(texture);
-				context.setTextureInfo(material.getBaseColorTextureInfo(), textureInfoDef);
-			}
-			if (materialDef.emissiveTexture !== void 0) {
-				const textureInfoDef = materialDef.emissiveTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source];
-				material.setEmissiveTexture(texture);
-				context.setTextureInfo(material.getEmissiveTextureInfo(), textureInfoDef);
-			}
-			if (materialDef.normalTexture !== void 0) {
-				const textureInfoDef = materialDef.normalTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source];
-				material.setNormalTexture(texture);
-				context.setTextureInfo(material.getNormalTextureInfo(), textureInfoDef);
-				if (materialDef.normalTexture.scale !== void 0) material.setNormalScale(materialDef.normalTexture.scale);
-			}
-			if (materialDef.occlusionTexture !== void 0) {
-				const textureInfoDef = materialDef.occlusionTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source];
-				material.setOcclusionTexture(texture);
-				context.setTextureInfo(material.getOcclusionTextureInfo(), textureInfoDef);
-				if (materialDef.occlusionTexture.strength !== void 0) material.setOcclusionStrength(materialDef.occlusionTexture.strength);
-			}
-			if (pbrDef.metallicRoughnessTexture !== void 0) {
-				const textureInfoDef = pbrDef.metallicRoughnessTexture;
-				const texture = context.textures[textureDefs[textureInfoDef.index].source];
-				material.setMetallicRoughnessTexture(texture);
-				context.setTextureInfo(material.getMetallicRoughnessTextureInfo(), textureInfoDef);
-			}
 			return material;
 		});
 		/** Meshes. */
